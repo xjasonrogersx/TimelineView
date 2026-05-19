@@ -1,0 +1,1247 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Timeline Map Viewer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <style>
+        :root {
+            --bg-a: #e8f0ff;
+            --bg-b: #fff4e0;
+            --panel: rgba(255, 255, 255, 0.92);
+            --ink: #10203b;
+            --muted: #4d5b73;
+            --accent: #1263d4;
+            --accent-2: #f28f3b;
+            --line-exact: #1263d4;
+            --line-arc: #ef6a5b;
+            --visit: #0f9d58;
+            --shadow: 0 12px 24px rgba(16, 32, 59, 0.16);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "IBM Plex Sans", sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(120vw 120vh at 8% 15%, rgba(18, 99, 212, 0.16), transparent 48%),
+                radial-gradient(95vw 85vh at 88% 12%, rgba(242, 143, 59, 0.2), transparent 52%),
+                linear-gradient(140deg, var(--bg-a), var(--bg-b));
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar {
+            padding: 14px 18px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: end;
+            background: var(--panel);
+            backdrop-filter: blur(6px);
+            border-bottom: 1px solid rgba(16, 32, 59, 0.12);
+            box-shadow: var(--shadow);
+            z-index: 1000;
+        }
+
+        .title {
+            min-width: 220px;
+            margin-right: 10px;
+        }
+
+        .title h1 {
+            font-size: 1.15rem;
+            margin: 0;
+            letter-spacing: 0.01em;
+        }
+
+        .title p {
+            margin: 2px 0 0;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .control {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 140px;
+        }
+
+        .control label {
+            font-size: 0.78rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .control input,
+        .control select,
+        .control button {
+            font: inherit;
+            border: 1px solid rgba(16, 32, 59, 0.24);
+            border-radius: 10px;
+            padding: 8px 10px;
+            background: #fff;
+            color: var(--ink);
+        }
+
+        .control input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .control button {
+            cursor: pointer;
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+            font-weight: 600;
+        }
+
+        .control button:hover {
+            filter: brightness(1.06);
+        }
+
+        .control button.secondary {
+            background: #fff;
+            color: var(--ink);
+            border-color: rgba(16, 32, 59, 0.3);
+        }
+
+        .stats {
+            margin-left: auto;
+            min-width: 220px;
+            font-size: 0.9rem;
+            color: var(--muted);
+            text-align: right;
+        }
+
+        #status {
+            font-size: 0.8rem;
+            margin-top: 3px;
+        }
+
+        #map {
+            flex: 1;
+            width: 100%;
+        }
+
+        .leaflet-tooltip {
+            font-family: "IBM Plex Sans", sans-serif;
+        }
+
+        .visit-label {
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(16, 32, 59, 0.18);
+            border-radius: 6px;
+            padding: 2px 7px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #10203b;
+            box-shadow: 0 2px 6px rgba(16, 32, 59, 0.15);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        .visit-label::before {
+            display: none;
+        }
+
+        .leaflet-popup-content {
+            margin: 0 !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(16, 32, 59, 0.2);
+            border: 1px solid rgba(16, 32, 59, 0.12);
+            padding: 0 !important;
+        }
+
+        .leaflet-popup-tip {
+            background-color: #fff;
+            border: 1px solid rgba(16, 32, 59, 0.12);
+        }
+
+        .legend-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--panel);
+            border: 1px solid rgba(16, 32, 59, 0.12);
+            border-radius: 12px;
+            padding: 14px 16px;
+            box-shadow: var(--shadow);
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            z-index: 999;
+            min-width: 160px;
+        }
+
+        .legend-panel h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.95rem;
+            color: var(--ink);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 6px 0;
+            color: var(--muted);
+        }
+
+        .legend-swatch {
+            display: inline-block;
+            width: 16px;
+            height: 2px;
+            border-radius: 1px;
+            flex-shrink: 0;
+        }
+
+        .legend-item.arc .legend-swatch {
+            border-top: 2px dashed;
+            border-color: inherit;
+        }
+
+        .distance-box {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: var(--panel);
+            border: 1px solid rgba(16, 32, 59, 0.12);
+            border-radius: 12px;
+            padding: 12px 18px;
+            box-shadow: var(--shadow);
+            font-size: 0.85rem;
+            z-index: 999;
+            text-align: center;
+            min-width: 110px;
+        }
+
+        .distance-box .dist-label {
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .distance-box .dist-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--ink);
+            line-height: 1;
+        }
+
+        @media (max-width: 860px) {
+            .topbar {
+                align-items: stretch;
+            }
+
+            .stats {
+                margin-left: 0;
+                width: 100%;
+                text-align: left;
+            }
+
+            .legend-panel {
+                bottom: auto;
+                right: auto;
+                top: 96px;
+                left: 0;
+                max-height: 200px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="topbar">
+        <div class="title">
+            <h1>Timeline Activity Map</h1>
+            <p>Recent weeks from your exported Timeline.json</p>
+        </div>
+
+        <div class="control">
+            <label for="startDate">Start date</label>
+            <input id="startDate" type="date">
+        </div>
+
+        <div class="control">
+            <label for="endDate">End date</label>
+            <input id="endDate" type="date">
+        </div>
+
+        <div class="control">
+            <label for="routeMode">Route style</label>
+            <select id="routeMode">
+                <option value="exact">Exact points</option>
+                <option value="arcs">Arc from start to end</option>
+            </select>
+        </div>
+
+        <div class="control">
+            <label for="mapStyle">Map style</label>
+            <select id="mapStyle">
+                <option value="osm">OSM Streets</option>
+                <option value="cartoLight">Carto Light</option>
+                <option value="cartoDark">Carto Dark</option>
+                <option value="esriSatellite">Satellite</option>
+            </select>
+        </div>
+
+        <div class="control">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input id="connectRoutes" type="checkbox">
+                <span>Connect routes</span>
+            </label>
+        </div>
+
+        <div class="control">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input id="labelPoints" type="checkbox">
+                <span>Label visits</span>
+            </label>
+        </div>
+
+        <div class="control" style="min-width: 240px;">
+            <label for="dataUrl">Timeline URL</label>
+            <input id="dataUrl" type="text" value="Timeline.json"
+                placeholder="Timeline.json or http://localhost:8000/Timeline.json">
+        </div>
+
+        <div class="control">
+            <label for="loadButton">Data</label>
+            <button id="loadButton" type="button">Load Timeline.json</button>
+        </div>
+
+        <div class="control">
+            <label for="applyButton">Filter</label>
+            <button id="applyButton" type="button" class="secondary">Apply Filter</button>
+        </div>
+
+        <div class="control">
+            <label for="exportButton">Export</label>
+            <button id="exportButton" type="button">Save PNG</button>
+        </div>
+
+        <div class="stats">
+            <div id="summary">No data loaded.</div>
+            <div id="status"></div>
+        </div>
+    </div>
+
+    <div id="map"></div>
+    <div class="legend-panel" id="legend"></div>
+    <div class="distance-box" id="distanceBox">
+        <div class="dist-label">Distance</div>
+        <div class="dist-value" id="distValue">—</div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script>
+        const map = L.map("map", { preferCanvas: true }).setView([20, 0], 2);
+
+        const BASEMAPS = {
+            osm: {
+                url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                options: {
+                    maxZoom: 19,
+                    crossOrigin: true,
+                    attribution: "&copy; OpenStreetMap contributors"
+                }
+            },
+            cartoLight: {
+                url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                options: {
+                    maxZoom: 20,
+                    crossOrigin: true,
+                    attribution: "&copy; OpenStreetMap contributors &copy; CARTO"
+                }
+            },
+            cartoDark: {
+                url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+                options: {
+                    maxZoom: 20,
+                    crossOrigin: true,
+                    attribution: "&copy; OpenStreetMap contributors &copy; CARTO"
+                }
+            },
+            esriSatellite: {
+                url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+                options: {
+                    maxZoom: 19,
+                    crossOrigin: true,
+                    attribution: "Tiles &copy; Esri"
+                }
+            }
+        };
+
+        let currentBaseLayer = null;
+
+        function applyMapStyle(styleKey) {
+            const style = BASEMAPS[styleKey] || BASEMAPS.osm;
+            if (currentBaseLayer) {
+                map.removeLayer(currentBaseLayer);
+            }
+            currentBaseLayer = L.tileLayer(style.url, style.options).addTo(map);
+        }
+
+        applyMapStyle("osm");
+
+        const layers = {
+            routes: L.layerGroup().addTo(map),
+            visits: L.layerGroup().addTo(map)
+        };
+
+        const startInput = document.getElementById("startDate");
+        const endInput = document.getElementById("endDate");
+        const routeModeInput = document.getElementById("routeMode");
+        const mapStyleInput = document.getElementById("mapStyle");
+        const connectRoutesInput = document.getElementById("connectRoutes");
+        const labelPointsInput = document.getElementById("labelPoints");
+        const loadButton = document.getElementById("loadButton");
+        const applyButton = document.getElementById("applyButton");
+        const exportButton = document.getElementById("exportButton");
+        const statusNode = document.getElementById("status");
+        const summaryNode = document.getElementById("summary");
+        const dataUrlInput = document.getElementById("dataUrl");
+
+        const DAY_MS = 24 * 60 * 60 * 1000;
+        const DEFAULT_LOOKBACK_DAYS = 21;
+        const MAX_ROUTE_POINTS_PER_SEGMENT = 500;
+        const MAX_TOTAL_POINTS = 40000;
+
+        const ACTIVITY_COLORS = {
+            "WALKING": "#2563eb",
+            "IN_VEHICLE": "#dc2626",
+            "CYCLING": "#16a34a",
+            "RUNNING": "#9333ea",
+            "STILL": "#6b7280",
+            "TILTING": "#f59e0b",
+            "IN_BUS": "#b91c1c",
+            "IN_TRAIN": "#16a34a",
+            "IN_SUBWAY": "#7f1d1d",
+            "IN_TRAM": "#b91c1c",
+            "IN_TAXI": "#dc2626",
+            "IN_PASSENGER_VEHICLE": "#c7141a",
+            "IN_FERRY": "#0ea5e9",
+            "IN_GONDOLA_LIFT": "#ec4899",
+            "IN_WHEELCHAIR": "#64748b",
+            "BOATING": "#3b82f6",
+            "KAYAKING": "#06b6d4",
+            "MOTORCYCLING": "#991b1b",
+            "PARAGLIDING": "#7c3aed",
+            "FLYING": "#60a5fa",
+            "SKATEBOARDING": "#f59e0b",
+            "SKIING": "#e0e7ff",
+            "SNOWBOARDING": "#dbeafe",
+            "UNKNOWN_ACTIVITY_TYPE": "#4b5563"
+        };
+
+        const ACTIVITY_LABELS = {
+            "WALKING": "Walking",
+            "IN_VEHICLE": "In Vehicle",
+            "CYCLING": "Cycling",
+            "RUNNING": "Running",
+            "STILL": "Still",
+            "TILTING": "Tilting",
+            "IN_BUS": "Bus",
+            "IN_TRAIN": "Train",
+            "IN_SUBWAY": "Subway",
+            "IN_TRAM": "Tram",
+            "IN_TAXI": "Taxi",
+            "IN_PASSENGER_VEHICLE": "Passenger Vehicle",
+            "IN_FERRY": "Ferry",
+            "IN_GONDOLA_LIFT": "Gondola Lift",
+            "IN_WHEELCHAIR": "Wheelchair",
+            "BOATING": "Boating",
+            "KAYAKING": "Kayaking",
+            "MOTORCYCLING": "Motorcycling",
+            "PARAGLIDING": "Paragliding",
+            "FLYING": "Flying",
+            "SKATEBOARDING": "Skateboarding",
+            "SKIING": "Skiing",
+            "SNOWBOARDING": "Snowboarding",
+            "UNKNOWN_ACTIVITY_TYPE": "Unknown"
+        };
+
+        let allSegments = [];
+        let minTimestamp = null;
+        let maxTimestamp = null;
+        let usedActivityTypes = new Set();
+        let lastTotalKm = 0;
+
+        if (window.location.protocol === "file:") {
+            dataUrlInput.value = "http://localhost:8000/Timeline.json";
+            setStatus("Opened as file://. Start local server: python3 -m http.server 8000", true);
+        }
+
+        function setStatus(message, isError = false) {
+            statusNode.textContent = message;
+            statusNode.style.color = isError ? "#c32f27" : "#4d5b73";
+        }
+
+        function parseCoordString(value) {
+            if (typeof value !== "string") {
+                return null;
+            }
+
+            const cleaned = value.replace(/\u00b0/g, "").trim();
+            const match = cleaned.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
+            if (!match) {
+                return null;
+            }
+
+            const lat = Number(match[1]);
+            const lng = Number(match[2]);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                return null;
+            }
+            if (Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+                return null;
+            }
+            return [lat, lng];
+        }
+
+        function parseDate(value) {
+            if (!value) {
+                return null;
+            }
+            const date = new Date(value);
+            return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        function dateToInputValue(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        }
+
+        function dedupeConsecutive(points) {
+            const out = [];
+            for (const point of points) {
+                const prev = out[out.length - 1];
+                if (!prev || prev[0] !== point[0] || prev[1] !== point[1]) {
+                    out.push(point);
+                }
+            }
+            return out;
+        }
+
+        function samplePoints(points, maxPoints) {
+            if (points.length <= maxPoints) {
+                return points;
+            }
+
+            const sampled = [];
+            const step = (points.length - 1) / (maxPoints - 1);
+            for (let i = 0; i < maxPoints; i += 1) {
+                sampled.push(points[Math.round(i * step)]);
+            }
+            return sampled;
+        }
+
+        function haversineKm(a, b) {
+            const R = 6371;
+            const dLat = (b[0] - a[0]) * Math.PI / 180;
+            const dLng = (b[1] - a[1]) * Math.PI / 180;
+            const sinDlat = Math.sin(dLat / 2);
+            const sinDlng = Math.sin(dLng / 2);
+            const h = sinDlat * sinDlat +
+                Math.cos(a[0] * Math.PI / 180) * Math.cos(b[0] * Math.PI / 180) * sinDlng * sinDlng;
+            return R * 2 * Math.asin(Math.sqrt(h));
+        }
+
+        function routeDistanceKm(points) {
+            let km = 0;
+            for (let i = 1; i < points.length; i += 1) {
+                km += haversineKm(points[i - 1], points[i]);
+            }
+            return km;
+        }
+
+        function formatDistance(km) {
+            if (km < 1) return `${Math.round(km * 1000)} m`;
+            if (km < 100) return `${km.toFixed(1)} km`;
+            return `${Math.round(km).toLocaleString()} km`;
+        }
+
+        function buildArcPoints(start, end, steps = 32) {
+            const [lat1, lng1] = start;
+            const [lat2, lng2] = end;
+            const dLat = lat2 - lat1;
+            const dLng = lng2 - lng1;
+            const distance = Math.hypot(dLat, dLng);
+            const amplitude = Math.min(1.2, distance * 0.18);
+
+            const perpLat = -dLng;
+            const perpLng = dLat;
+            const norm = Math.hypot(perpLat, perpLng) || 1;
+            const unitLat = perpLat / norm;
+            const unitLng = perpLng / norm;
+
+            const points = [];
+            for (let i = 0; i <= steps; i += 1) {
+                const t = i / steps;
+                const baseLat = lat1 + (lat2 - lat1) * t;
+                const baseLng = lng1 + (lng2 - lng1) * t;
+                const curveFactor = Math.sin(Math.PI * t);
+                points.push([
+                    baseLat + unitLat * amplitude * curveFactor,
+                    baseLng + unitLng * amplitude * curveFactor
+                ]);
+            }
+            return points;
+        }
+
+        function parseSegments(data) {
+            const rawSegments = Array.isArray(data.semanticSegments) ? data.semanticSegments : [];
+            const parsed = [];
+            let totalPoints = 0;
+            usedActivityTypes.clear();
+
+            // First pass: collect activity type intervals
+            const activityIntervals = [];
+            for (const segment of rawSegments) {
+                if (segment.activity && segment.activity.topCandidate && segment.activity.topCandidate.type) {
+                    const start = parseDate(segment.startTime);
+                    const end = parseDate(segment.endTime);
+                    if (start && end) {
+                        activityIntervals.push({
+                            start: start.getTime(),
+                            end: end.getTime(),
+                            type: segment.activity.topCandidate.type
+                        });
+                    }
+                }
+            }
+
+            // Find best activity type for a given time window
+            function resolveActivityType(segStart, segEnd) {
+                if (!segStart && !segEnd) return "UNKNOWN_ACTIVITY_TYPE";
+                const t1 = segStart ? segStart.getTime() : segEnd.getTime();
+                const t2 = segEnd ? segEnd.getTime() : t1;
+                let best = null;
+                let bestOverlap = 0;
+                for (const interval of activityIntervals) {
+                    const overlapStart = Math.max(t1, interval.start);
+                    const overlapEnd = Math.min(t2, interval.end);
+                    const overlap = overlapEnd - overlapStart;
+                    if (overlap > bestOverlap) {
+                        bestOverlap = overlap;
+                        best = interval.type;
+                    }
+                }
+                return best || "UNKNOWN_ACTIVITY_TYPE";
+            }
+
+            // Second pass: parse path segments
+            for (const segment of rawSegments) {
+                // Skip pure activity segments — they have no path data of their own
+                if (segment.activity && !segment.timelinePath) {
+                    continue;
+                }
+
+                const start = parseDate(segment.startTime);
+                const end = parseDate(segment.endTime);
+                const segmentTime = start || end;
+                if (!segmentTime) {
+                    continue;
+                }
+
+                const routePoints = [];
+                let hasTrackedPath = false;
+
+                if (Array.isArray(segment.timelinePath)) {
+                    for (const p of segment.timelinePath) {
+                        const coord = parseCoordString(p && p.point);
+                        if (coord) {
+                            routePoints.push(coord);
+                        }
+                    }
+                    if (routePoints.length > 0) {
+                        hasTrackedPath = true;
+                    }
+                }
+
+                const activityType = resolveActivityType(start, end);
+                usedActivityTypes.add(activityType);
+
+                const cleanRoute = samplePoints(
+                    dedupeConsecutive(routePoints),
+                    MAX_ROUTE_POINTS_PER_SEGMENT
+                );
+                totalPoints += cleanRoute.length;
+
+                if (totalPoints > MAX_TOTAL_POINTS) {
+                    setStatus("Large dataset detected: route points were reduced for browser speed.");
+                }
+
+                let visitPoint = null;
+                let visitInfo = null;
+                if (segment.visit && segment.visit.topCandidate && segment.visit.topCandidate.placeLocation) {
+                    visitPoint = parseCoordString(segment.visit.topCandidate.placeLocation.latLng);
+                    if (visitPoint) {
+                        visitInfo = {
+                            point: visitPoint,
+                            semanticType: segment.visit.topCandidate.semanticType || "Unknown Place",
+                            probability: segment.visit.topCandidate.probability || 0,
+                            placeId: segment.visit.topCandidate.placeId || null,
+                            hierarchyLevel: segment.visit.hierarchyLevel || 0
+                        };
+                    }
+                }
+
+                parsed.push({
+                    start,
+                    end,
+                    route: cleanRoute,
+                    visitInfo,
+                    activityType,
+                    hasTrackedPath
+                });
+            }
+
+            parsed.sort((a, b) => {
+                const ta = (a.start || a.end).getTime();
+                const tb = (b.start || b.end).getTime();
+                return ta - tb;
+            });
+
+            return parsed;
+        }
+
+        function computeRange(segments) {
+            if (!segments.length) {
+                return { min: null, max: null };
+            }
+
+            let min = Number.POSITIVE_INFINITY;
+            let max = Number.NEGATIVE_INFINITY;
+
+            for (const segment of segments) {
+                const t1 = segment.start ? segment.start.getTime() : null;
+                const t2 = segment.end ? segment.end.getTime() : null;
+                if (t1 !== null) {
+                    min = Math.min(min, t1);
+                    max = Math.max(max, t1);
+                }
+                if (t2 !== null) {
+                    min = Math.min(min, t2);
+                    max = Math.max(max, t2);
+                }
+            }
+
+            return {
+                min: Number.isFinite(min) ? new Date(min) : null,
+                max: Number.isFinite(max) ? new Date(max) : null
+            };
+        }
+
+        function resetDateInputs() {
+            if (!minTimestamp || !maxTimestamp) {
+                return;
+            }
+
+            const startDefault = new Date(maxTimestamp.getTime() - DEFAULT_LOOKBACK_DAYS * DAY_MS);
+            const boundedStart = startDefault < minTimestamp ? minTimestamp : startDefault;
+
+            startInput.min = dateToInputValue(minTimestamp);
+            startInput.max = dateToInputValue(maxTimestamp);
+            endInput.min = dateToInputValue(minTimestamp);
+            endInput.max = dateToInputValue(maxTimestamp);
+
+            startInput.value = dateToInputValue(boundedStart);
+            endInput.value = dateToInputValue(maxTimestamp);
+        }
+
+        function filterSegments() {
+            if (!allSegments.length) {
+                return [];
+            }
+
+            const startDate = startInput.value ? new Date(startInput.value + "T00:00:00") : null;
+            const endDate = endInput.value ? new Date(endInput.value + "T23:59:59.999") : null;
+
+            if (startDate && endDate && startDate > endDate) {
+                setStatus("Start date cannot be after end date.", true);
+                return [];
+            }
+
+            setStatus("");
+
+            return allSegments.filter((segment) => {
+                const segmentStart = segment.start ? segment.start.getTime() : null;
+                const segmentEnd = segment.end ? segment.end.getTime() : segmentStart;
+
+                if (segmentStart === null && segmentEnd === null) {
+                    return false;
+                }
+
+                const startsAfterFilterStart = !startDate || (segmentEnd !== null && segmentEnd >= startDate.getTime());
+                const endsBeforeFilterEnd = !endDate || (segmentStart !== null && segmentStart <= endDate.getTime());
+                return startsAfterFilterStart && endsBeforeFilterEnd;
+            });
+        }
+
+        function drawSegments(segments) {
+            layers.routes.clearLayers();
+            layers.visits.clearLayers();
+
+            const mode = routeModeInput.value;
+            const shouldConnectRoutes = connectRoutesInput.checked;
+            const shouldLabelPoints = labelPointsInput.checked;
+            const boundsPoints = [];
+            let routeCount = 0;
+            let visitCount = 0;
+            let totalKm = 0;
+            const routeEndpoints = [];
+
+            for (const segment of segments) {
+                // Only draw routes if they have actual GPS tracking (timelinePath data)
+                // Skip synthetic routes created just from activity start/end points
+                if (segment.route.length >= 2 && segment.hasTrackedPath) {
+                    const activityType = segment.activityType || "UNKNOWN_ACTIVITY_TYPE";
+                    const color = ACTIVITY_COLORS[activityType] || ACTIVITY_COLORS["UNKNOWN_ACTIVITY_TYPE"];
+
+                    totalKm += routeDistanceKm(segment.route);
+
+                    if (mode === "exact") {
+                        L.polyline(segment.route, {
+                            color: color,
+                            weight: 3,
+                            opacity: 0.72
+                        }).addTo(layers.routes);
+                        boundsPoints.push(...segment.route);
+                    } else {
+                        const start = segment.route[0];
+                        const end = segment.route[segment.route.length - 1];
+                        const arcPoints = buildArcPoints(start, end);
+                        L.polyline(arcPoints, {
+                            color: color,
+                            weight: 2.5,
+                            opacity: 0.7,
+                            dashArray: "7 5"
+                        }).addTo(layers.routes);
+                        boundsPoints.push(start, end);
+                    }
+
+                    // Store route endpoints for potential connection
+                    routeEndpoints.push({
+                        start: segment.route[0],
+                        end: segment.route[segment.route.length - 1],
+                        color: color
+                    });
+                    routeCount += 1;
+                }
+
+                if (segment.visitInfo) {
+                    const marker = L.circleMarker(segment.visitInfo.point, {
+                        radius: 5,
+                        color: "#065f46",
+                        fillColor: "var(--visit)",
+                        fillOpacity: 0.85,
+                        weight: 2
+                    });
+
+                    const startStr = segment.start ? segment.start.toLocaleString() : "Unknown";
+                    const endStr = segment.end ? segment.end.toLocaleString() : "Unknown";
+                    const placeType = segment.visitInfo.semanticType || "Visit";
+                    const confidence = Math.round(segment.visitInfo.probability * 100);
+
+                    // Hover tooltip with basic info
+                    marker.bindTooltip(
+                        `<b>${placeType}</b><br/>` +
+                        `${startStr}<br/>to ${endStr}`,
+                        { sticky: true }
+                    );
+
+                    // Click popup: opens immediately then reverse-geocodes via Nominatim
+                    const lat = segment.visitInfo.point[0];
+                    const lng = segment.visitInfo.point[1];
+
+                    function buildPopupHtml(addressLine) {
+                        return `
+                            <div style="font-family: 'IBM Plex Sans', sans-serif; font-size: 0.85rem; min-width: 190px; padding: 12px;">
+                                <b style="font-size: 0.95rem;">${placeType}</b><br/>
+                                <hr style="margin: 6px 0; border: none; border-top: 1px solid #e5e7eb;">
+                                <div style="color: #4b5563; line-height: 1.6;">
+                                    ${addressLine ? `<b>Address:</b><br/>${addressLine}<br/><br/>` : ""}
+                                    <b>Arrival:</b><br/>${startStr}<br/><br/>
+                                    <b>Departure:</b><br/>${endStr}<br/><br/>
+                                    <b>Confidence:</b> ${confidence}%<br/>
+                                    <b>Lat/Lng:</b> ${lat.toFixed(5)}°, ${lng.toFixed(5)}°
+                                </div>
+                            </div>`;
+                    }
+
+                    marker.bindPopup(buildPopupHtml('<span style="color:#9ca3af">Looking up address…</span>'), { maxWidth: 320 });
+
+                    if (shouldLabelPoints) {
+                        // Fetch address immediately and add a permanent label
+                        (async () => {
+                            try {
+                                const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
+                                const res = await fetch(url, { headers: { "Accept-Language": "en" } });
+                                const data = await res.json();
+                                // Use road/suburb/town for a short label
+                                const a = data.address || {};
+                                const shortLabel = a.road || a.suburb || a.village || a.town || a.city || data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                                marker.bindTooltip(shortLabel, {
+                                    permanent: true,
+                                    direction: "top",
+                                    offset: [0, -6],
+                                    className: "visit-label"
+                                }).openTooltip();
+                                marker._geocoded = true;
+                                marker._geocodedAddress = data.display_name;
+                            } catch { /* silent */ }
+                        })();
+                    }
+
+                    marker.on("popupopen", async () => {
+                        if (marker._geocoded) {
+                            if (marker._geocodedAddress) {
+                                marker.setPopupContent(buildPopupHtml(marker._geocodedAddress));
+                            }
+                            return;
+                        }
+                        marker._geocoded = true;
+                        try {
+                            const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
+                            const res = await fetch(url, { headers: { "Accept-Language": "en" } });
+                            const data = await res.json();
+                            const address = data.display_name || "Address not found";
+                            marker._geocodedAddress = address;
+                            marker.setPopupContent(buildPopupHtml(address));
+                        } catch {
+                            marker.setPopupContent(buildPopupHtml("Could not look up address"));
+                        }
+                    });
+
+                    marker.addTo(layers.visits);
+                    boundsPoints.push(segment.visitInfo.point);
+                    visitCount += 1;
+                }
+            }
+
+            // Draw connector arcs between consecutive route endpoints if enabled
+            if (shouldConnectRoutes && routeEndpoints.length > 1) {
+                for (let i = 0; i < routeEndpoints.length - 1; i += 1) {
+                    const currentEnd = routeEndpoints[i].end;
+                    const nextStart = routeEndpoints[i + 1].start;
+
+                    // Skip if the points are very close (already effectively connected)
+                    const distKm = haversineKm(currentEnd, nextStart);
+                    if (distKm < 0.05) continue;
+
+                    const connectorArc = buildArcPoints(currentEnd, nextStart, 20);
+                    L.polyline(connectorArc, {
+                        color: "#94a3b8",
+                        weight: 1.5,
+                        opacity: 0.5,
+                        dashArray: "4 4"
+                    }).addTo(layers.routes);
+                }
+            }
+
+            if (boundsPoints.length > 1) {
+                map.fitBounds(L.latLngBounds(boundsPoints), { padding: [24, 24] });
+            }
+
+            lastTotalKm = totalKm;
+            summaryNode.textContent = `${segments.length} segments · ${routeCount} routes · ${visitCount} visits · ${formatDistance(totalKm)}`;
+            updateLegend();
+        }
+
+        function updateLegend() {
+            const legendNode = document.getElementById("legend");
+            if (!legendNode) return;
+
+            const html = `
+                <h3>Routes</h3>
+                ${Array.from(usedActivityTypes)
+                    .sort()
+                    .map((type) => `
+                        <div class="legend-item">
+                            <span class="legend-swatch" style="background-color: ${ACTIVITY_COLORS[type] || ACTIVITY_COLORS["UNKNOWN_ACTIVITY_TYPE"]}"></span>
+                            <span>${ACTIVITY_LABELS[type] || type}</span>
+                        </div>
+                    `)
+                    .join("")}
+                <div style="margin-top: 10px; border-top: 1px solid rgba(16, 32, 59, 0.12); padding-top: 10px;">
+                    <div class="legend-item">
+                        <span class="legend-swatch" style="background-color: #0f9d58"></span>
+                        <span>Visit location</span>
+                    </div>
+                </div>
+            `;
+            legendNode.innerHTML = html;
+            const distValue = document.getElementById("distValue");
+            if (distValue) distValue.textContent = formatDistance(lastTotalKm);
+        }
+
+        function renderFilteredView() {
+            const filtered = filterSegments();
+            drawSegments(filtered);
+        }
+
+        async function exportHighResPng() {
+            const filtered = filterSegments();
+            if (!filtered.length) {
+                setStatus("No filtered data to export.", true);
+                return;
+            }
+
+            if (typeof html2canvas !== "function") {
+                setStatus("PNG export library failed to load. Refresh and try again.", true);
+                return;
+            }
+
+            setStatus("Rendering high-resolution PNG...");
+
+            const exportWidth = 3200;
+            const exportHeight = 2200;
+            const mode = routeModeInput.value;
+            const shouldConnectRoutes = connectRoutesInput.checked;
+            let exportTotalKm = 0;
+
+            const wrapper = document.createElement("div");
+            wrapper.style.position = "fixed";
+            wrapper.style.left = "-10000px";
+            wrapper.style.top = "-10000px";
+            wrapper.style.width = `${exportWidth}px`;
+            wrapper.style.height = `${exportHeight}px`;
+            wrapper.style.pointerEvents = "none";
+            document.body.appendChild(wrapper);
+
+            let exportMap;
+            try {
+                exportMap = L.map(wrapper, {
+                    zoomControl: false,
+                    attributionControl: false,
+                    preferCanvas: true,
+                    fadeAnimation: false,
+                    zoomAnimation: false,
+                    inertia: false
+                }).setView([20, 0], 2);
+
+                const mapStyle = BASEMAPS[mapStyleInput.value] ? mapStyleInput.value : "osm";
+                const tileDef = BASEMAPS[mapStyle];
+                const tileLayer = L.tileLayer(tileDef.url, tileDef.options).addTo(exportMap);
+
+                const routeLayer = L.layerGroup().addTo(exportMap);
+                const visitLayer = L.layerGroup().addTo(exportMap);
+
+                const boundsPoints = [];
+                const routeEndpoints = [];
+
+                for (const segment of filtered) {
+                    if (segment.route.length >= 2 && segment.hasTrackedPath) {
+                        const activityType = segment.activityType || "UNKNOWN_ACTIVITY_TYPE";
+                        const color = ACTIVITY_COLORS[activityType] || ACTIVITY_COLORS.UNKNOWN_ACTIVITY_TYPE;
+                        exportTotalKm += routeDistanceKm(segment.route);
+
+                        if (mode === "exact") {
+                            L.polyline(segment.route, {
+                                color,
+                                weight: 4,
+                                opacity: 0.8
+                            }).addTo(routeLayer);
+                            boundsPoints.push(...segment.route);
+                        } else {
+                            const start = segment.route[0];
+                            const end = segment.route[segment.route.length - 1];
+                            const arcPoints = buildArcPoints(start, end);
+                            L.polyline(arcPoints, {
+                                color,
+                                weight: 3.5,
+                                opacity: 0.75,
+                                dashArray: "8 6"
+                            }).addTo(routeLayer);
+                            boundsPoints.push(start, end);
+                        }
+
+                        routeEndpoints.push({
+                            start: segment.route[0],
+                            end: segment.route[segment.route.length - 1]
+                        });
+                    }
+
+                    if (segment.visitInfo) {
+                        L.circleMarker(segment.visitInfo.point, {
+                            radius: 5,
+                            color: "#065f46",
+                            fillColor: "#0f9d58",
+                            fillOpacity: 0.9,
+                            weight: 2
+                        }).addTo(visitLayer);
+                        boundsPoints.push(segment.visitInfo.point);
+                    }
+                }
+
+                if (shouldConnectRoutes && routeEndpoints.length > 1) {
+                    for (let i = 0; i < routeEndpoints.length - 1; i += 1) {
+                        const currentEnd = routeEndpoints[i].end;
+                        const nextStart = routeEndpoints[i + 1].start;
+                        const distKm = haversineKm(currentEnd, nextStart);
+                        if (distKm < 0.05) continue;
+
+                        const connectorArc = buildArcPoints(currentEnd, nextStart, 20);
+                        L.polyline(connectorArc, {
+                            color: "#94a3b8",
+                            weight: 2,
+                            opacity: 0.55,
+                            dashArray: "4 4"
+                        }).addTo(routeLayer);
+                    }
+                }
+
+                exportMap.invalidateSize();
+                if (boundsPoints.length > 1) {
+                    const paddingY = Math.round(exportHeight * 0.10);
+                    const paddingX = Math.round(exportWidth * 0.10);
+                    exportMap.fitBounds(L.latLngBounds(boundsPoints), { padding: [paddingY, paddingX] });
+                }
+
+                await new Promise((resolve) => {
+                    let done = false;
+                    const finish = () => {
+                        if (done) return;
+                        done = true;
+                        setTimeout(resolve, 250);
+                    };
+                    tileLayer.once("load", finish);
+                    setTimeout(finish, 3000);
+                });
+
+                const canvas = await html2canvas(wrapper, {
+                    useCORS: true,
+                    allowTaint: false,
+                    backgroundColor: "#ffffff",
+                    scale: 1,
+                    width: exportWidth,
+                    height: exportHeight,
+                    logging: false
+                });
+
+                const ctx = canvas.getContext("2d");
+                if (ctx) {
+                    const badgeText = `Distance traveled: ${formatDistance(exportTotalKm)}`;
+                    const padX = 26;
+                    const padY = 16;
+                    ctx.font = "700 46px 'IBM Plex Sans', sans-serif";
+                    const textWidth = ctx.measureText(badgeText).width;
+                    const boxWidth = Math.ceil(textWidth + padX * 2);
+                    const boxHeight = 88;
+                    const boxX = 36;
+                    const boxY = 36;
+
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+                    ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+                    ctx.strokeStyle = "rgba(16, 32, 59, 0.25)";
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+                    ctx.fillStyle = "#10203b";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(badgeText, boxX + padX, boxY + boxHeight / 2 + 1);
+                }
+
+                const blob = await new Promise((resolve) => {
+                    canvas.toBlob(resolve, "image/png");
+                });
+
+                if (!blob) {
+                    throw new Error("Failed to create PNG data");
+                }
+
+                const stamp = new Date().toISOString().slice(0, 10);
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = `timeline-area-${stamp}.png`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(url);
+
+                setStatus(`Saved high-resolution PNG (${exportWidth}x${exportHeight}).`);
+            } catch (error) {
+                setStatus(`PNG export failed: ${error.message}`, true);
+            } finally {
+                if (exportMap) {
+                    exportMap.remove();
+                }
+                wrapper.remove();
+            }
+        }
+
+        async function loadTimeline() {
+            const dataUrl = (dataUrlInput.value || "Timeline.json").trim();
+            setStatus(`Loading ${dataUrl}...`);
+            try {
+                const response = await fetch(dataUrl, { cache: "no-store" });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const json = await response.json();
+                allSegments = parseSegments(json);
+
+                if (!allSegments.length) {
+                    throw new Error("No semanticSegments found in Timeline.json");
+                }
+
+                const range = computeRange(allSegments);
+                minTimestamp = range.min;
+                maxTimestamp = range.max;
+                resetDateInputs();
+                renderFilteredView();
+
+                const minText = minTimestamp ? minTimestamp.toLocaleDateString() : "?";
+                const maxText = maxTimestamp ? maxTimestamp.toLocaleDateString() : "?";
+                setStatus(`Loaded ${allSegments.length} segments (${minText} to ${maxText}).`);
+            } catch (error) {
+                setStatus(
+                    `Could not load timeline data from ${dataUrl}. If needed, run: python3 -m http.server 8000 (${error.message})`,
+                    true
+                );
+                summaryNode.textContent = "No data loaded.";
+            }
+        }
+
+        loadButton.addEventListener("click", loadTimeline);
+        applyButton.addEventListener("click", renderFilteredView);
+        exportButton.addEventListener("click", exportHighResPng);
+        routeModeInput.addEventListener("change", renderFilteredView);
+        mapStyleInput.addEventListener("change", () => applyMapStyle(mapStyleInput.value));
+        connectRoutesInput.addEventListener("change", renderFilteredView);
+        labelPointsInput.addEventListener("change", renderFilteredView);
+
+        loadTimeline();
+    </script>
+</body>
+
+</html>
