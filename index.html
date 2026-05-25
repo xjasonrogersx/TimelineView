@@ -250,6 +250,188 @@
             line-height: 1;
         }
 
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(16, 32, 59, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1400;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal-card {
+            width: min(1100px, 100%);
+            max-height: min(78vh, 760px);
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid rgba(16, 32, 59, 0.14);
+            box-shadow: 0 24px 54px rgba(16, 32, 59, 0.28);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(16, 32, 59, 0.12);
+            background: linear-gradient(90deg, #f4f8ff, #fff7ef);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.02rem;
+        }
+
+        .modal-header button {
+            border: 1px solid rgba(16, 32, 59, 0.22);
+            background: #fff;
+            color: var(--ink);
+            border-radius: 9px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font: inherit;
+            font-weight: 600;
+        }
+
+        .modal-body {
+            padding: 14px;
+            overflow: auto;
+        }
+
+        .distance-report-note {
+            margin: 0 0 10px;
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .distance-report-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 720px;
+            font-size: 0.84rem;
+        }
+
+        .distance-report-table th,
+        .distance-report-table td {
+            border: 1px solid rgba(16, 32, 59, 0.14);
+            padding: 8px 10px;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .distance-report-table th:first-child,
+        .distance-report-table td:first-child {
+            text-align: left;
+            position: sticky;
+            left: 0;
+            background: #f8fbff;
+            z-index: 1;
+        }
+
+        .distance-report-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #eef4ff;
+            color: var(--ink);
+        }
+
+        .distance-report-table tfoot td {
+            font-weight: 700;
+            background: #f6f8fb;
+        }
+
+        .distance-report-empty {
+            padding: 16px;
+            border: 1px dashed rgba(16, 32, 59, 0.26);
+            border-radius: 10px;
+            color: var(--muted);
+            font-size: 0.9rem;
+            background: #fbfcff;
+        }
+
+        .chart-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .chart-controls label {
+            font-size: 0.82rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .chart-controls select {
+            font: inherit;
+            border: 1px solid rgba(16, 32, 59, 0.24);
+            border-radius: 8px;
+            padding: 7px 9px;
+            background: #fff;
+            color: var(--ink);
+            min-width: 220px;
+        }
+
+        .chart-controls button {
+            font: inherit;
+            border: 1px solid rgba(16, 32, 59, 0.24);
+            border-radius: 8px;
+            padding: 7px 11px;
+            background: #fff;
+            color: var(--ink);
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .monthly-chart-wrap {
+            border: 1px solid rgba(16, 32, 59, 0.12);
+            border-radius: 12px;
+            padding: 10px;
+            background: linear-gradient(180deg, #fbfdff, #f7faff);
+            overflow: auto;
+        }
+
+        .monthly-chart-svg {
+            display: block;
+            width: 100%;
+            min-width: 760px;
+            height: auto;
+        }
+
+        .monthly-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 14px;
+            margin-top: 10px;
+        }
+
+        .monthly-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--muted);
+            font-size: 0.82rem;
+            white-space: nowrap;
+        }
+
+        .monthly-legend-line {
+            width: 18px;
+            height: 0;
+            border-top: 3px solid;
+            border-radius: 2px;
+        }
+
         @media (max-width: 860px) {
             .topbar {
                 align-items: stretch;
@@ -342,6 +524,21 @@
             <button id="exportButton" type="button">Save PNG</button>
         </div>
 
+        <div class="control">
+            <label for="yearlyReportButton">Reports</label>
+            <button id="yearlyReportButton" type="button" class="secondary">Yearly Distance</button>
+        </div>
+
+        <div class="control">
+            <label for="monthlyGraphButton">Charts</label>
+            <button id="monthlyGraphButton" type="button" class="secondary">Monthly by Year</button>
+        </div>
+
+        <div class="control">
+            <label for="distanceUnitToggle">Units</label>
+            <button id="distanceUnitToggle" type="button" class="secondary">Units: km</button>
+        </div>
+
         <div class="stats">
             <div id="summary">No data loaded.</div>
             <div id="status"></div>
@@ -353,6 +550,37 @@
     <div class="distance-box" id="distanceBox">
         <div class="dist-label">Distance</div>
         <div class="dist-value" id="distValue">—</div>
+    </div>
+
+    <div class="modal-backdrop" id="yearlyDistanceModal" aria-hidden="true">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="yearlyDistanceTitle">
+            <div class="modal-header">
+                <h2 id="yearlyDistanceTitle">Yearly Distance by Category</h2>
+                <button id="yearlyDistanceClose" type="button">Close</button>
+            </div>
+            <div class="modal-body">
+                <p class="distance-report-note" id="yearlyDistanceNote">Distances are shown in km and include all years available in the loaded Timeline data.</p>
+                <div id="yearlyDistanceTableContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="monthlyDistanceModal" aria-hidden="true">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="monthlyDistanceTitle">
+            <div class="modal-header">
+                <h2 id="monthlyDistanceTitle">Monthly Distance by Year</h2>
+                <button id="monthlyDistanceClose" type="button">Close</button>
+            </div>
+            <div class="modal-body">
+                <p class="distance-report-note" id="monthlyDistanceNote">Shows monthly distance (km) for each year available in your loaded data.</p>
+                <div class="chart-controls">
+                    <label for="monthlyTypeSelect">Activity type</label>
+                    <select id="monthlyTypeSelect"></select>
+                    <button id="monthlyCumulativeToggle" type="button">Mode: Monthly</button>
+                </div>
+                <div id="monthlyDistanceChartContainer"></div>
+            </div>
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -422,11 +650,25 @@
         const loadButton = document.getElementById("loadButton");
         const applyButton = document.getElementById("applyButton");
         const exportButton = document.getElementById("exportButton");
+        const yearlyReportButton = document.getElementById("yearlyReportButton");
+        const monthlyGraphButton = document.getElementById("monthlyGraphButton");
+        const distanceUnitToggle = document.getElementById("distanceUnitToggle");
         const statusNode = document.getElementById("status");
         const summaryNode = document.getElementById("summary");
         const dataUrlInput = document.getElementById("dataUrl");
+        const yearlyDistanceModal = document.getElementById("yearlyDistanceModal");
+        const yearlyDistanceClose = document.getElementById("yearlyDistanceClose");
+        const yearlyDistanceTableContainer = document.getElementById("yearlyDistanceTableContainer");
+        const yearlyDistanceNote = document.getElementById("yearlyDistanceNote");
+        const monthlyDistanceModal = document.getElementById("monthlyDistanceModal");
+        const monthlyDistanceClose = document.getElementById("monthlyDistanceClose");
+        const monthlyDistanceNote = document.getElementById("monthlyDistanceNote");
+        const monthlyTypeSelect = document.getElementById("monthlyTypeSelect");
+        const monthlyDistanceChartContainer = document.getElementById("monthlyDistanceChartContainer");
+        const monthlyCumulativeToggle = document.getElementById("monthlyCumulativeToggle");
 
         const DAY_MS = 24 * 60 * 60 * 1000;
+        const KM_TO_MI = 0.621371;
         const DEFAULT_LOOKBACK_DAYS = 21;
         const MAX_ROUTE_POINTS_PER_SEGMENT = 500;
         const MAX_TOTAL_POINTS = 40000;
@@ -490,6 +732,8 @@
         let maxTimestamp = null;
         let usedActivityTypes = new Set();
         let lastTotalKm = 0;
+        let monthlyChartIsCumulative = false;
+        let distanceUnit = "km";
 
         if (window.location.protocol === "file:") {
             dataUrlInput.value = "http://localhost:8000/Timeline.json";
@@ -582,9 +826,25 @@
         }
 
         function formatDistance(km) {
-            if (km < 1) return `${Math.round(km * 1000)} m`;
-            if (km < 100) return `${km.toFixed(1)} km`;
-            return `${Math.round(km).toLocaleString()} km`;
+            const value = distanceUnit === "mi" ? km * KM_TO_MI : km;
+
+            if (distanceUnit === "km") {
+                if (km < 1) return `${Math.round(km * 1000)} m`;
+                if (km < 100) return `${km.toFixed(1)} km`;
+                return `${Math.round(km).toLocaleString()} km`;
+            }
+
+            if (value < 0.1) return `${Math.round(value * 5280)} ft`;
+            if (value < 100) return `${value.toFixed(1)} mi`;
+            return `${Math.round(value).toLocaleString()} mi`;
+        }
+
+        function distanceUnitLabel() {
+            return distanceUnit === "mi" ? "mi" : "km";
+        }
+
+        function distanceValueForUnit(km) {
+            return distanceUnit === "mi" ? km * KM_TO_MI : km;
         }
 
         function buildArcPoints(start, end, steps = 32) {
@@ -1007,6 +1267,436 @@
             drawSegments(filtered);
         }
 
+        function distanceCellText(km) {
+            return `${distanceValueForUnit(km).toFixed(1)} ${distanceUnitLabel()}`;
+        }
+
+        function refreshDistanceUnitUi() {
+            distanceUnitToggle.textContent = `Units: ${distanceUnitLabel()}`;
+            yearlyDistanceNote.textContent = `Distances are shown in ${distanceUnitLabel()} and include all years available in the loaded Timeline data.`;
+            monthlyDistanceNote.textContent = `Shows monthly distance (${distanceUnitLabel()}) for each year available in your loaded data.`;
+
+            if (allSegments.length) {
+                renderFilteredView();
+            }
+            if (yearlyDistanceModal.classList.contains("open")) {
+                renderYearlyDistanceTable(allSegments);
+            }
+            if (monthlyDistanceModal.classList.contains("open")) {
+                renderMonthlyDistanceChart(allSegments, monthlyTypeSelect.value || "IN_PASSENGER_VEHICLE");
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/\"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        function computeYearlyDistanceRows(segments) {
+            const byYear = new Map();
+            const categories = new Set();
+
+            for (const segment of segments) {
+                if (!segment.hasTrackedPath || segment.route.length < 2) continue;
+
+                const when = segment.start || segment.end;
+                if (!when) continue;
+
+                const year = String(when.getFullYear());
+                const category = segment.activityType || "UNKNOWN_ACTIVITY_TYPE";
+                const km = routeDistanceKm(segment.route);
+
+                if (!byYear.has(year)) byYear.set(year, new Map());
+                const yearMap = byYear.get(year);
+                yearMap.set(category, (yearMap.get(category) || 0) + km);
+                categories.add(category);
+            }
+
+            const years = Array.from(byYear.keys()).sort((a, b) => Number(a) - Number(b));
+            const categoryList = Array.from(categories)
+                .sort((a, b) => (ACTIVITY_LABELS[a] || a).localeCompare(ACTIVITY_LABELS[b] || b));
+
+            const categoryTotals = new Map(categoryList.map((c) => [c, 0]));
+            const rows = years.map((year) => {
+                const yearMap = byYear.get(year);
+                const cells = {};
+                let totalKm = 0;
+
+                for (const category of categoryList) {
+                    const km = yearMap.get(category) || 0;
+                    cells[category] = km;
+                    totalKm += km;
+                    categoryTotals.set(category, (categoryTotals.get(category) || 0) + km);
+                }
+
+                return { year, cells, totalKm };
+            });
+
+            const grandTotal = rows.reduce((sum, row) => sum + row.totalKm, 0);
+
+            return {
+                rows,
+                categoryList,
+                categoryTotals,
+                grandTotal
+            };
+        }
+
+        function renderYearlyDistanceTable(segments) {
+            const { rows, categoryList, categoryTotals, grandTotal } = computeYearlyDistanceRows(segments);
+
+            if (!rows.length || !categoryList.length) {
+                yearlyDistanceTableContainer.innerHTML = `
+                    <div class="distance-report-empty">
+                        No route distance data is available in the loaded timeline.
+                    </div>
+                `;
+                return;
+            }
+
+            const headerCells = categoryList
+                .map((category) => `<th>${escapeHtml(ACTIVITY_LABELS[category] || category)}</th>`)
+                .join("");
+
+            const bodyRows = rows
+                .map((row) => {
+                    const cells = categoryList
+                        .map((category) => `<td>${distanceCellText(row.cells[category] || 0)}</td>`)
+                        .join("");
+                    return `<tr><td>${escapeHtml(row.year)}</td>${cells}<td>${distanceCellText(row.totalKm)}</td></tr>`;
+                })
+                .join("");
+
+            const footerCells = categoryList
+                .map((category) => `<td>${distanceCellText(categoryTotals.get(category) || 0)}</td>`)
+                .join("");
+
+            yearlyDistanceTableContainer.innerHTML = `
+                <table class="distance-report-table">
+                    <thead>
+                        <tr>
+                            <th>Year</th>
+                            ${headerCells}
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${bodyRows}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td>Total</td>
+                            ${footerCells}
+                            <td>${distanceCellText(grandTotal)}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            `;
+        }
+
+        function openYearlyDistanceModal() {
+            renderYearlyDistanceTable(allSegments);
+            yearlyDistanceModal.classList.add("open");
+            yearlyDistanceModal.setAttribute("aria-hidden", "false");
+        }
+
+        function closeYearlyDistanceModal() {
+            yearlyDistanceModal.classList.remove("open");
+            yearlyDistanceModal.setAttribute("aria-hidden", "true");
+        }
+
+        function chartYearColor(index) {
+            const palette = ["#1263d4", "#d63f1f", "#0f9d58", "#7c3aed", "#d97706", "#0891b2", "#be185d", "#334155"];
+            return palette[index % palette.length];
+        }
+
+        function monthlyDistanceData(segments, activityType) {
+            const byYear = new Map();
+            const countsByYear = new Map();
+
+            for (const segment of segments) {
+                if (!segment.hasTrackedPath || segment.route.length < 2) continue;
+                if ((segment.activityType || "UNKNOWN_ACTIVITY_TYPE") !== activityType) continue;
+
+                const when = segment.start || segment.end;
+                if (!when) continue;
+
+                const year = when.getFullYear();
+                const monthIndex = when.getMonth();
+                const km = routeDistanceKm(segment.route);
+
+                if (!byYear.has(year)) {
+                    byYear.set(year, Array(12).fill(0));
+                    countsByYear.set(year, Array(12).fill(0));
+                }
+                byYear.get(year)[monthIndex] += km;
+                countsByYear.get(year)[monthIndex] += 1;
+            }
+
+            const years = Array.from(byYear.keys()).sort((a, b) => a - b);
+            return {
+                years,
+                valuesByYear: byYear,
+                countsByYear
+            };
+        }
+
+        function cumulativeValues(values) {
+            const out = [];
+            let running = 0;
+            for (const value of values) {
+                running += value;
+                out.push(running);
+            }
+            return out;
+        }
+
+        function latestYearProjection(years, valuesByYear, countsByYear, isCumulative) {
+            if (years.length < 3) return null;
+
+            const latestYear = years[years.length - 1];
+            const prevYear1 = years[years.length - 2];
+            const prevYear2 = years[years.length - 3];
+
+            const latestCounts = countsByYear.get(latestYear) || Array(12).fill(0);
+            const latestValues = valuesByYear.get(latestYear) || Array(12).fill(0);
+            const prev1 = valuesByYear.get(prevYear1) || Array(12).fill(0);
+            const prev2 = valuesByYear.get(prevYear2) || Array(12).fill(0);
+
+            let lastObservedMonth = -1;
+            for (let i = 0; i < 12; i += 1) {
+                if (latestCounts[i] > 0) lastObservedMonth = i;
+            }
+
+            if (lastObservedMonth >= 11) return null;
+
+            const projectedMonthly = Array(12).fill(null);
+            for (let month = Math.max(0, lastObservedMonth + 1); month < 12; month += 1) {
+                projectedMonthly[month] = (prev1[month] + prev2[month]) / 2;
+            }
+
+            const projectedDisplay = Array(12).fill(null);
+            if (isCumulative) {
+                let running = 0;
+                for (let month = 0; month < 12; month += 1) {
+                    if (month <= lastObservedMonth) {
+                        running += latestValues[month];
+                    } else {
+                        running += projectedMonthly[month] || 0;
+                        projectedDisplay[month] = running;
+                    }
+                }
+            } else {
+                for (let month = 0; month < 12; month += 1) {
+                    projectedDisplay[month] = projectedMonthly[month];
+                }
+            }
+
+            return {
+                latestYear,
+                lastObservedMonth,
+                projectedDisplay
+            };
+        }
+
+        function renderMonthlyModeButton() {
+            monthlyCumulativeToggle.textContent = monthlyChartIsCumulative ? "Mode: Cumulative" : "Mode: Monthly";
+        }
+
+        function renderMonthlyDistanceChart(segments, activityType) {
+            const { years, valuesByYear, countsByYear } = monthlyDistanceData(segments, activityType);
+
+            if (!years.length) {
+                monthlyDistanceChartContainer.innerHTML = `
+                    <div class="distance-report-empty">
+                        No route distance data found for ${escapeHtml(ACTIVITY_LABELS[activityType] || activityType)}.
+                    </div>
+                `;
+                return;
+            }
+
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const displayedByYear = new Map();
+            for (const year of years) {
+                const raw = valuesByYear.get(year) || Array(12).fill(0);
+                displayedByYear.set(year, monthlyChartIsCumulative ? cumulativeValues(raw) : raw.slice());
+            }
+
+            const projection = latestYearProjection(years, valuesByYear, countsByYear, monthlyChartIsCumulative);
+            const yValues = years.flatMap((year) => displayedByYear.get(year));
+            if (projection) {
+                for (const v of projection.projectedDisplay) {
+                    if (v !== null) yValues.push(v);
+                }
+            }
+
+            const yDisplayValues = yValues.map((value) => distanceValueForUnit(value));
+            const yMaxRaw = Math.max(...yDisplayValues);
+            const yMax = yMaxRaw <= 0 ? 1 : Math.ceil(yMaxRaw * 1.15);
+
+            const width = 980;
+            const height = 420;
+            const padLeft = 58;
+            const padRight = 22;
+            const padTop = 26;
+            const padBottom = 54;
+            const chartW = width - padLeft - padRight;
+            const chartH = height - padTop - padBottom;
+
+            function xForMonth(month) {
+                return padLeft + (month / 11) * chartW;
+            }
+
+            function yForValue(kmValue) {
+                const displayValue = distanceValueForUnit(kmValue);
+                return padTop + chartH - (displayValue / yMax) * chartH;
+            }
+
+            const gridCount = 5;
+            const gridLines = Array.from({ length: gridCount + 1 }, (_, i) => {
+                const ratio = i / gridCount;
+                const y = padTop + chartH - ratio * chartH;
+                const v = yMax * ratio;
+                return `
+                    <line x1="${padLeft}" y1="${y}" x2="${padLeft + chartW}" y2="${y}" stroke="rgba(16,32,59,0.14)" stroke-width="1" />
+                    <text x="${padLeft - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="#4d5b73">${v.toFixed(0)}</text>
+                `;
+            }).join("");
+
+            const monthTicks = monthNames.map((name, month) => {
+                const x = xForMonth(month);
+                return `
+                    <line x1="${x}" y1="${padTop + chartH}" x2="${x}" y2="${padTop + chartH + 6}" stroke="rgba(16,32,59,0.5)" stroke-width="1" />
+                    <text x="${x}" y="${height - 18}" text-anchor="middle" font-size="11" fill="#4d5b73">${name}</text>
+                `;
+            }).join("");
+
+            const series = years.map((year, index) => {
+                const color = chartYearColor(index);
+                const values = displayedByYear.get(year) || Array(12).fill(0);
+                const isProjectedYear = projection && year === projection.latestYear;
+
+                let solidMonths = Array.from({ length: 12 }, (_, i) => i);
+                if (isProjectedYear) {
+                    solidMonths = projection.lastObservedMonth >= 0
+                        ? Array.from({ length: projection.lastObservedMonth + 1 }, (_, i) => i)
+                        : [];
+                }
+
+                const solidPoints = solidMonths
+                    .map((month) => `${xForMonth(month)},${yForValue(values[month])}`)
+                    .join(" ");
+
+                const solidLine = solidPoints
+                    ? `<polyline fill="none" stroke="${color}" stroke-width="2.4" points="${solidPoints}" />`
+                    : "";
+
+                const dottedMonths = [];
+                if (isProjectedYear) {
+                    if (projection.lastObservedMonth >= 0) {
+                        dottedMonths.push(projection.lastObservedMonth);
+                    }
+                    for (let month = Math.max(0, projection.lastObservedMonth + 1); month < 12; month += 1) {
+                        if (projection.projectedDisplay[month] !== null) dottedMonths.push(month);
+                    }
+                }
+
+                const dottedPoints = dottedMonths
+                    .map((month) => {
+                        const v = month <= projection.lastObservedMonth
+                            ? values[month]
+                            : projection.projectedDisplay[month];
+                        return `${xForMonth(month)},${yForValue(v)}`;
+                    })
+                    .join(" ");
+
+                const dottedLine = dottedPoints
+                    ? `<polyline fill="none" stroke="${color}" stroke-width="2.4" stroke-dasharray="7 5" points="${dottedPoints}" opacity="0.9" />`
+                    : "";
+
+                const dots = solidMonths
+                    .map((month) => {
+                        const x = xForMonth(month);
+                        const y = yForValue(values[month]);
+                        return `<circle cx="${x}" cy="${y}" r="3" fill="${color}"><title>${year} ${monthNames[month]}: ${distanceValueForUnit(values[month]).toFixed(1)} ${distanceUnitLabel()}</title></circle>`;
+                    })
+                    .join("");
+
+                const projectionDots = isProjectedYear
+                    ? Array.from({ length: 12 }, (_, month) => month)
+                        .filter((month) => projection.projectedDisplay[month] !== null)
+                        .map((month) => {
+                            const x = xForMonth(month);
+                            const y = yForValue(projection.projectedDisplay[month]);
+                            return `<circle cx="${x}" cy="${y}" r="3" fill="#fff" stroke="${color}" stroke-width="2"><title>${year} ${monthNames[month]} projected: ${distanceValueForUnit(projection.projectedDisplay[month]).toFixed(1)} ${distanceUnitLabel()}</title></circle>`;
+                        })
+                        .join("")
+                    : "";
+
+                return {
+                    year,
+                    color,
+                    svg: `${solidLine}${dottedLine}${dots}${projectionDots}`
+                };
+            });
+
+            monthlyDistanceChartContainer.innerHTML = `
+                <div class="monthly-chart-wrap">
+                    <svg viewBox="0 0 ${width} ${height}" class="monthly-chart-svg" role="img" aria-label="Monthly distance chart">
+                        <rect x="${padLeft}" y="${padTop}" width="${chartW}" height="${chartH}" fill="#ffffff" stroke="rgba(16,32,59,0.12)" />
+                        ${gridLines}
+                        <line x1="${padLeft}" y1="${padTop + chartH}" x2="${padLeft + chartW}" y2="${padTop + chartH}" stroke="#334155" stroke-width="1.4" />
+                        <line x1="${padLeft}" y1="${padTop}" x2="${padLeft}" y2="${padTop + chartH}" stroke="#334155" stroke-width="1.4" />
+                        ${monthTicks}
+                        ${series.map((s) => s.svg).join("")}
+                        <text x="${padLeft}" y="14" font-size="12" fill="#4d5b73">Distance (${distanceUnitLabel()})</text>
+                    </svg>
+                </div>
+                <div class="monthly-legend">
+                    ${series.map((s) => `
+                        <div class="monthly-legend-item">
+                            <span class="monthly-legend-line" style="border-color:${s.color}"></span>
+                            <span>${s.year}</span>
+                        </div>
+                    `).join("")}
+                </div>
+            `;
+        }
+
+        function populateMonthlyTypeSelect() {
+            const types = Array.from(new Set([...Object.keys(ACTIVITY_LABELS), ...Array.from(usedActivityTypes)]));
+            types.sort((a, b) => (ACTIVITY_LABELS[a] || a).localeCompare(ACTIVITY_LABELS[b] || b));
+
+            monthlyTypeSelect.innerHTML = types
+                .map((type) => {
+                    const label = ACTIVITY_LABELS[type] || type;
+                    return `<option value="${escapeHtml(type)}">${escapeHtml(label)}</option>`;
+                })
+                .join("");
+
+            const defaultType = "IN_PASSENGER_VEHICLE";
+            if (types.includes(defaultType)) {
+                monthlyTypeSelect.value = defaultType;
+            }
+        }
+
+        function openMonthlyDistanceModal() {
+            populateMonthlyTypeSelect();
+            renderMonthlyModeButton();
+            renderMonthlyDistanceChart(allSegments, monthlyTypeSelect.value || "IN_PASSENGER_VEHICLE");
+            monthlyDistanceModal.classList.add("open");
+            monthlyDistanceModal.setAttribute("aria-hidden", "false");
+        }
+
+        function closeMonthlyDistanceModal() {
+            monthlyDistanceModal.classList.remove("open");
+            monthlyDistanceModal.setAttribute("aria-hidden", "true");
+        }
+
         async function exportHighResPng() {
             const filtered = filterSegments();
             if (!filtered.length) {
@@ -1235,11 +1925,44 @@
         loadButton.addEventListener("click", loadTimeline);
         applyButton.addEventListener("click", renderFilteredView);
         exportButton.addEventListener("click", exportHighResPng);
+        yearlyReportButton.addEventListener("click", openYearlyDistanceModal);
+        monthlyGraphButton.addEventListener("click", openMonthlyDistanceModal);
+        yearlyDistanceClose.addEventListener("click", closeYearlyDistanceModal);
+        monthlyDistanceClose.addEventListener("click", closeMonthlyDistanceModal);
+        yearlyDistanceModal.addEventListener("click", (event) => {
+            if (event.target === yearlyDistanceModal) {
+                closeYearlyDistanceModal();
+            }
+        });
+        monthlyDistanceModal.addEventListener("click", (event) => {
+            if (event.target === monthlyDistanceModal) {
+                closeMonthlyDistanceModal();
+            }
+        });
+        monthlyTypeSelect.addEventListener("change", () => {
+            renderMonthlyDistanceChart(allSegments, monthlyTypeSelect.value || "IN_PASSENGER_VEHICLE");
+        });
+        monthlyCumulativeToggle.addEventListener("click", () => {
+            monthlyChartIsCumulative = !monthlyChartIsCumulative;
+            renderMonthlyModeButton();
+            renderMonthlyDistanceChart(allSegments, monthlyTypeSelect.value || "IN_PASSENGER_VEHICLE");
+        });
+        distanceUnitToggle.addEventListener("click", () => {
+            distanceUnit = distanceUnit === "km" ? "mi" : "km";
+            refreshDistanceUnitUi();
+        });
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+                if (yearlyDistanceModal.classList.contains("open")) closeYearlyDistanceModal();
+                if (monthlyDistanceModal.classList.contains("open")) closeMonthlyDistanceModal();
+            }
+        });
         routeModeInput.addEventListener("change", renderFilteredView);
         mapStyleInput.addEventListener("change", () => applyMapStyle(mapStyleInput.value));
         connectRoutesInput.addEventListener("change", renderFilteredView);
         labelPointsInput.addEventListener("change", renderFilteredView);
 
+        refreshDistanceUnitUi();
         loadTimeline();
     </script>
 </body>
